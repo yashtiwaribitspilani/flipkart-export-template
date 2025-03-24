@@ -72,3 +72,93 @@ Ensure that the output file is not open in Excel when you run the script.
 File Paths:
 If the CSV or template file is in a different directory, update the file paths in the script accordingly.
 This README should help you understand the script, its requirements, and how to run it. Adjust the details as needed for your specific use case.
+---------------------------FOR PHP-------------------------------------------------------------------------------------------------------------------
+1. Install PHP
+Windows:
+
+Download the latest PHP version from windows.php.net or use a package like XAMPP which bundles PHP, Apache, and MySQL.
+
+After installation, ensure PHP is added to your system PATH. You can verify by running php -v in a Command Prompt.
+
+macOS/Linux:
+
+Use your package manager. For example, on macOS you can use Homebrew:
+
+bash
+Copy
+Edit
+brew install php
+On Linux (Debian/Ubuntu):
+
+bash
+Copy
+Edit
+sudo apt update
+sudo apt install php
+Verify installation with php -v.
+
+2. Install Composer
+Composer is a dependency manager for PHP:
+
+Download & Install Composer:
+
+Go to getcomposer.org/download and follow the installation instructions for your operating system.
+
+After installation, open a terminal/command prompt and run composer -V to ensure Composer is installed and in your PATH.
+
+3. Set Up Your Project Directory
+Create a Folder:
+Create a new directory (e.g., php_excel_project) where you’ll store your PHP script and Excel files.
+
+Navigate to the Folder:
+Open your terminal or command prompt and navigate to your project folder:
+
+bash
+Copy
+Edit
+cd path/to/php_excel_project
+Initialize Composer:
+Run the following command to create a composer.json file:
+
+bash
+Copy
+Edit
+composer init
+You can follow the prompts (press Enter to accept defaults).
+
+Install PhpSpreadsheet:
+Run:
+
+bash
+Copy
+Edit
+composer require phpoffice/phpspreadsheet
+This will download the PhpSpreadsheet library and its dependencies into a vendor directory in your project folder.
+
+4. Prepare Your Files
+PHP Script:
+Create a new PHP file (e.g., process_excel.php) in your project folder. Paste the PHP code (from the earlier answer) into this file.
+
+Excel Files:
+Place your input Excel file (e.g., sample_data (1).xlsx) and your template file (e.g., C_sling-bag_fd927b15e6244645_1703-2438FK_REQH2ILIQXHAH.xlsx) into the same folder or update the file paths in your script to point to the correct locations.
+
+5. Run the PHP Script
+Open your terminal/command prompt in the project folder.
+
+Run the script using PHP:
+
+bash
+Copy
+Edit
+php process_excel.php
+The script should now execute:
+
+It reads the input Excel file.
+
+It validates and processes the rows.
+
+It writes valid rows into the template file.
+
+It creates an invalid data report (if there are errors).
+
+Check the output messages in the terminal and the generated files (C_sling-bag_filled.xlsx and possibly invalid_data_report.xlsx) in your project folder.
