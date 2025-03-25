@@ -7,6 +7,207 @@ require 'vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use Exception;
+
+/**
+ * List of countries in the world.
+ */
+const COUNTRIES = [
+    'Afghanistan',
+    'Albania',
+    'Algeria',
+    'Andorra',
+    'Angola',
+    'Antigua and Barbuda',
+    'Argentina',
+    'Armenia',
+    'Australia',
+    'Austria',
+    'Azerbaijan',
+    'Bahamas',
+    'Bahrain',
+    'Bangladesh',
+    'Barbados',
+    'Belarus',
+    'Belgium',
+    'Belize',
+    'Benin',
+    'Bhutan',
+    'Bolivia',
+    'Bosnia and Herzegovina',
+    'Botswana',
+    'Brazil',
+    'Brunei',
+    'Bulgaria',
+    'Burkina Faso',
+    'Burundi',
+    'Cabo Verde',
+    'Cambodia',
+    'Cameroon',
+    'Canada',
+    'Central African Republic',
+    'Chad',
+    'Chile',
+    'China',
+    'Colombia',
+    'Comoros',
+    'Congo (Congo-Brazzaville)',
+    'Costa Rica',
+    'Croatia',
+    'Cuba',
+    'Cyprus',
+    'Czechia',
+    'Democratic Republic of the Congo',
+    'Denmark',
+    'Djibouti',
+    'Dominica',
+    'Dominican Republic',
+    'Ecuador',
+    'Egypt',
+    'El Salvador',
+    'Equatorial Guinea',
+    'Eritrea',
+    'Estonia',
+    'Eswatini',
+    'Ethiopia',
+    'Fiji',
+    'Finland',
+    'France',
+    'Gabon',
+    'Gambia',
+    'Georgia',
+    'Germany',
+    'Ghana',
+    'Greece',
+    'Grenada',
+    'Guatemala',
+    'Guinea',
+    'Guinea-Bissau',
+    'Guyana',
+    'Haiti',
+    'Holy See',
+    'Honduras',
+    'Hungary',
+    'Iceland',
+    'India',
+    'Indonesia',
+    'Iran',
+    'Iraq',
+    'Ireland',
+    'Israel',
+    'Italy',
+    'Jamaica',
+    'Japan',
+    'Jordan',
+    'Kazakhstan',
+    'Kenya',
+    'Kiribati',
+    'Kuwait',
+    'Kyrgyzstan',
+    'Laos',
+    'Latvia',
+    'Lebanon',
+    'Lesotho',
+    'Liberia',
+    'Libya',
+    'Liechtenstein',
+    'Lithuania',
+    'Luxembourg',
+    'Madagascar',
+    'Malawi',
+    'Malaysia',
+    'Maldives',
+    'Mali',
+    'Malta',
+    'Marshall Islands',
+    'Mauritania',
+    'Mauritius',
+    'Mexico',
+    'Micronesia',
+    'Moldova',
+    'Monaco',
+    'Mongolia',
+    'Montenegro',
+    'Morocco',
+    'Mozambique',
+    'Myanmar (Burma)',
+    'Namibia',
+    'Nauru',
+    'Nepal',
+    'Netherlands',
+    'New Zealand',
+    'Nicaragua',
+    'Niger',
+    'Nigeria',
+    'North Korea',
+    'North Macedonia',
+    'Norway',
+    'Oman',
+    'Pakistan',
+    'Palau',
+    'Palestine State',
+    'Panama',
+    'Papua New Guinea',
+    'Paraguay',
+    'Peru',
+    'Philippines',
+    'Poland',
+    'Portugal',
+    'Qatar',
+    'Romania',
+    'Russia',
+    'Rwanda',
+    'Saint Kitts and Nevis',
+    'Saint Lucia',
+    'Saint Vincent and the Grenadines',
+    'Samoa',
+    'San Marino',
+    'Sao Tome and Principe',
+    'Saudi Arabia',
+    'Senegal',
+    'Serbia',
+    'Seychelles',
+    'Sierra Leone',
+    'Singapore',
+    'Slovakia',
+    'Slovenia',
+    'Solomon Islands',
+    'Somalia',
+    'South Africa',
+    'South Korea',
+    'South Sudan',
+    'Spain',
+    'Sri Lanka',
+    'Sudan',
+    'Suriname',
+    'Sweden',
+    'Switzerland',
+    'Syria',
+    'Tajikistan',
+    'Tanzania',
+    'Thailand',
+    'Timor-Leste',
+    'Togo',
+    'Tonga',
+    'Trinidad and Tobago',
+    'Tunisia',
+    'Turkey',
+    'Turkmenistan',
+    'Tuvalu',
+    'Uganda',
+    'Ukraine',
+    'United Arab Emirates',
+    'United Kingdom',
+    'United States of America',
+    'Uruguay',
+    'Uzbekistan',
+    'Vanuatu',
+    'Venezuela',
+    'Vietnam',
+    'Yemen',
+    'Zambia',
+    'Zimbabwe'
+];
 
 /**
  * Checks if a given value is a positive integer.
@@ -49,7 +250,7 @@ function IsValidDecimalOrInt($value): bool
 }
 
 /**
- * Checks if a value is one of the allowed units.
+ * Checks if a value is one of the allowed length units.
  *
  * @param mixed $value
  *
@@ -62,15 +263,16 @@ function IsValidLengthUnit($value): bool
 }
 
 /**
- * Validates a country name (first letter capital and only letters/spaces).
+ * Checks if a given country name exists in the predefined list.
  *
  * @param mixed $value
  *
- * @return int|false
+ * @return bool
  */
-function IsValidCountry($value)
+function IsValidCountry($value): bool
 {
-    return preg_match('/^[A-Z][a-zA-Z\s]*$/', trim((string)$value));
+    $country = trim((string)$value);
+    return in_array($country, COUNTRIES, true);
 }
 
 /**
@@ -115,56 +317,76 @@ function main(): void
         'Silicon', 'Silk', 'Synthetic Leather', 'Tyvek', 'Velvet', 'Wood', 'Wool'
     ];
 
+    // Define variables for required flag.
+    $isRequired    = true;
+    $isNotRequired = false;
+
     // --- Step 1: Read the XLSX data (ignoring header names) ---
     $xlsx_file_path = 'sample_data (1).xlsx'; // Replace with your XLSX file path
-    $reader         = IOFactory::createReader('Xlsx');
-    $reader->setReadDataOnly(true);
-    $spreadsheet    = $reader->load($xlsx_file_path);
-    $worksheet      = $spreadsheet->getActiveSheet();
+
+    try {
+        $reader      = IOFactory::createReader('Xlsx');
+        $reader->setReadDataOnly(true);
+        $spreadsheet = $reader->load($xlsx_file_path);
+    } catch (Exception $e) {
+        error_log("Error loading XLSX file: " . $e->getMessage());
+        echo "Error: Unable to load XLSX file.\n";
+        return;
+    }
+
+    $worksheet = $spreadsheet->getActiveSheet();
     // PhpSpreadsheet reads data into an array with keys as column letters (A, B, C, …)
     $data = $worksheet->toArray(null, true, true, true);
 
     // --- Step 2: Open the Excel template ---
-    $template_path       = 'C_sling-bag_fd927b15e6244645_1703-2438FK_REQH2ILIQXHAH.xlsx';
-    $templateSpreadsheet = IOFactory::load($template_path);
-    $sheet               = $templateSpreadsheet->getSheetByName('sling_bag');
+    $template_path = 'C_sling-bag_fd927b15e6244645_1703-2438FK_REQH2ILIQXHAH.xlsx';
+
+    try {
+        $templateSpreadsheet = IOFactory::load($template_path);
+    } catch (Exception $e) {
+        error_log("Error loading template file: " . $e->getMessage());
+        echo "Error: Unable to load template file.\n";
+        return;
+    }
+
+    $sheet = $templateSpreadsheet->getSheetByName('sling_bag');
 
     // --- Step 3: Define the mapping ---
     // Mapping: target template column letter => [is_required, source Excel column letter]
     $mapping = [
-        'G'  => [true, 'G'],
-        'J'  => [true, 'J'],  // Must be positive integer
-        'K'  => [true, 'K'],  // Must be positive integer
-        'L'  => [true, 'L'],  // Must be exactly "Seller"
-        'N'  => [true, 'N'],  // Must be positive integer
-        'O'  => [true, 'O'],  // Must be positive integer
-        'P'  => [true, 'P'],  // Must be exactly "Flipkart"
-        'Q'  => [true, 'Q'],  // Must be positive integer
-        'R'  => [true, 'R'],  // Must be positive integer
-        'S'  => [true, 'S'],  // Must be positive integer
-        'T'  => [true, 'T'],  // Can be int or decimal
-        'U'  => [true, 'U'],  // Can be int or decimal
-        'V'  => [true, 'V'],  // Can be int or decimal
-        'W'  => [true, 'W'],  // Can be int or decimal
-        'Z'  => [true, 'Z'],  // Valid country (first letter capital)
-        'AA' => [true, 'AA'],
-        'AB' => [true, 'AB'],
-        'AD' => [true, 'AD'], // Only allowed GST values
-        'AF' => [true, 'AF'],
-        'AG' => [true, 'AG'], // AF and AG must not be the same
-        'AH' => [true, 'AH'],
-        'AI' => [true, 'AI'], // Must be one of allowed_AI
-        'AJ' => [true, 'AJ'],
-        'AK' => [true, 'AK'], // Must be one of allowed_AK
-        'AL' => [true, 'AL'], // Must be one of allowed_AL
-        'AM' => [true, 'AM'], // Must be one of allowed_AM
-        'AN' => [true, 'AN'], // Must be one of allowed_AN
-        'AO' => [true, 'AO'], // Must be a number
-        'AP' => [true, 'AP'], // Can be int or decimal
-        'AQ' => [true, 'AQ'], // Must be one of allowed units ("cm", "mm", "inch")
-        'AR' => [true, 'AR'], // Can be int or decimal
-        'AS' => [true, 'AS'], // Must be one of allowed units ("cm", "mm", "inch")
-        'AT' => [true, 'AT']  // Must be a valid URL
+        'G'  => [$isRequired, 'G'],
+        'J'  => [$isRequired, 'J'],  // Must be positive integer
+        'K'  => [$isRequired, 'K'],  // Must be positive integer
+        'L'  => [$isRequired, 'L'],  // Must be exactly "Seller"
+        'N'  => [$isRequired, 'N'],  // Must be positive integer
+        'O'  => [$isRequired, 'O'],  // Must be positive integer
+        'P'  => [$isRequired, 'P'],  // Must be exactly "Flipkart"
+        'Q'  => [$isRequired, 'Q'],  // Must be positive integer
+        'R'  => [$isRequired, 'R'],  // Must be positive integer
+        'S'  => [$isRequired, 'S'],  // Must be positive integer
+        'T'  => [$isRequired, 'T'],  // Can be int or decimal
+        'U'  => [$isRequired, 'U'],  // Can be int or decimal
+        'V'  => [$isRequired, 'V'],  // Can be int or decimal
+        'W'  => [$isRequired, 'W'],  // Can be int or decimal
+        'Z'  => [$isRequired, 'Z'],  // Valid country (must be in the list)
+        'AA' => [$isRequired, 'AA'],
+        'AB' => [$isRequired, 'AB'],
+        'AD' => [$isRequired, 'AD'], // Only allowed GST values
+        'AF' => [$isRequired, 'AF'],
+        'AG' => [$isRequired, 'AG'], // AF and AG must not be the same
+        'AH' => [$isRequired, 'AH'],
+        'AI' => [$isRequired, 'AI'], // Must be one of allowed_AI
+        'AJ' => [$isRequired, 'AJ'],
+        'AK' => [$isRequired, 'AK'], // Must be one of allowed_AK
+        'AL' => [$isRequired, 'AL'], // Must be one of allowed_AL
+        'AM' => [$isRequired, 'AM'], // Must be one of allowed_AM
+        'AN' => [$isRequired, 'AN'], // Must be one of allowed_AN
+        'AO' => [$isRequired, 'AO'], // Must be a number
+        'AP' => [$isRequired, 'AP'], // Can be int or decimal
+        'AQ' => [$isRequired, 'AQ'], // Must be one of allowed units ("cm", "mm", "inch")
+        'AR' => [$isRequired, 'AR'], // Can be int or decimal
+        'AS' => [$isRequired, 'AS'], // Must be one of allowed units ("cm", "mm", "inch")
+        'AT' => [$isRequired, 'AT']  // Must be a valid URL
     ];
 
     // --- Step 4: Prepare for invalid data tracking and valid row counter ---
@@ -203,7 +425,11 @@ function main(): void
             }
 
             if ($source_letter === 'L') {
-                if (trim((string)$value) !== 'Seller') {
+                $trimmedValue = trim((string)$value);
+                // If value is "seller" in lowercase, convert it to "Seller"
+                if ($trimmedValue === 'seller') {
+                    $value = 'Seller';
+                } elseif ($trimmedValue !== 'Seller') {
                     $error_list[] = "Column L must be 'Seller'; got '$value'";
                 }
             }
@@ -240,7 +466,7 @@ function main(): void
 
             if ($source_letter === 'Z') {
                 if (!IsValidCountry($value)) {
-                    $error_list[] = "Column Z must be a valid country name (first letter capital); got '$value'";
+                    $error_list[] = "Column Z must be a valid country name (must be in the predefined list); got '$value'";
                 }
             }
 
@@ -343,44 +569,64 @@ function main(): void
 
     // --- Step 6: Save the updated workbook with only valid rows ---
     $output_path = 'C_sling-bag_filled.xlsx';
-    $writer      = IOFactory::createWriter($templateSpreadsheet, 'Xlsx');
-    $writer->save($output_path);
-    echo "✅ Valid rows have been filled into the template starting from row 5 in the sling_bag tab.\n";
+    try {
+        $writer = IOFactory::createWriter($templateSpreadsheet, 'Xlsx');
+        $writer->save($output_path);
+        echo "✅ Valid rows have been filled into the template starting from row 5 in the sling_bag tab.\n";
+    } catch (Exception $e) {
+        error_log("Error saving filled workbook: " . $e->getMessage());
+        echo "Error: Unable to save filled workbook.\n";
+    }
 
     // --- Step 7: Create a report for invalid rows (if any) ---
     if (!empty($invalid_data_rows)) {
-        // Create a new spreadsheet for the invalid report.
-        $invalidSpreadsheet = new Spreadsheet();
-        $invalidSheet       = $invalidSpreadsheet->getActiveSheet();
+        try {
+            // Create a new spreadsheet for the invalid report.
+            $invalidSpreadsheet = new Spreadsheet();
+            $invalidSheet       = $invalidSpreadsheet->getActiveSheet();
 
-        // Write header row.
-        $headers  = array_keys($invalid_data_rows[0]);
-        $colIndex = 1;
-        foreach ($headers as $header) {
-            $cellCoordinate = Coordinate::stringFromColumnIndex($colIndex) . '1';
-            $invalidSheet->setCellValue($cellCoordinate, $header);
-            $colIndex++;
-        }
-
-        $rowIndex = 2;
-        foreach ($invalid_data_rows as $rowData) {
+            // Write header row.
+            $headers  = array_keys($invalid_data_rows[0]);
             $colIndex = 1;
             foreach ($headers as $header) {
-                $cellCoordinate = Coordinate::stringFromColumnIndex($colIndex) . $rowIndex;
-                $invalidSheet->setCellValue($cellCoordinate, $rowData[$header]);
+                $cellCoordinate = Coordinate::stringFromColumnIndex($colIndex) . '1';
+                $invalidSheet->setCellValue($cellCoordinate, $header);
                 $colIndex++;
             }
-            $rowIndex++;
-        }
 
-        $invalid_report_path = 'invalid_data_report.xlsx';
-        $invalidWriter      = IOFactory::createWriter($invalidSpreadsheet, 'Xlsx');
-        $invalidWriter->save($invalid_report_path);
-        echo "⚠️ Invalid data report generated: " .
-            $invalid_report_path . "\n";
+            $rowIndex = 2;
+            foreach ($invalid_data_rows as $rowData) {
+                $colIndex = 1;
+                foreach ($headers as $header) {
+                    $cellCoordinate = Coordinate::stringFromColumnIndex($colIndex) . $rowIndex;
+                    $invalidSheet->setCellValue($cellCoordinate, $rowData[$header]);
+                    $colIndex++;
+                }
+                $rowIndex++;
+            }
+
+            $invalid_report_path = 'invalid_data_report.xlsx';
+            $invalidWriter      = IOFactory::createWriter($invalidSpreadsheet, 'Xlsx');
+            $invalidWriter->save($invalid_report_path);
+            echo "⚠️ Invalid data report generated: " . $invalid_report_path . "\n";
+
+            // Free memory for invalid report.
+            $invalidSpreadsheet->disconnectWorksheets();
+            unset($invalidSpreadsheet);
+        } catch (Exception $e) {
+            error_log("Error generating invalid data report: " . $e->getMessage());
+            echo "Error: Unable to generate invalid data report.\n";
+        }
     } else {
         echo "✅ All rows passed validation. No invalid data report generated.\n";
     }
+
+    // Free memory for main spreadsheets.
+    $spreadsheet->disconnectWorksheets();
+    unset($spreadsheet);
+
+    $templateSpreadsheet->disconnectWorksheets();
+    unset($templateSpreadsheet);
 }
 
 // Only call main() if this file is executed directly.
