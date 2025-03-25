@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<ruleset name="ProjectRules">
+    <description>PHPCS configuration for the project using PSR-12 standards.</description>
+
+    <!-- Use the PSR-12 standard -->
+    <rule ref="PSR12" />
+
+    <!-- Specify the files or directories to check -->
+    <file>./</file>
+
+    <!-- You can add excludes here if necessary.
+         For example, if you want to disable specific sniffs, uncomment and customize the following lines:
+    <exclude name="Generic.NamingConventions.UpperCaseConstantName" />
+    -->
+
+    <!-- Optionally, set some arguments -->
+    <arg name="tab-width" value="4" />
+    <arg name="encoding" value="utf-8" />
+</ruleset>
