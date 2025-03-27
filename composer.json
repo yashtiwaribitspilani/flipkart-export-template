@@ -1,0 +1,17 @@
+{
+    "name": "yasht/flipkart-export-template",
+    "autoload": {
+        "psr-4": {
+            "Yasht\\FlipkartExportTemplate\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Yash TIwari",
+            "email": "115389165+yashtiwaribitspilani@users.noreply.github.com"
+        }
+    ],
+    "require": {
+        "phpoffice/phpspreadsheet": "^4.1"
+    }
+}
