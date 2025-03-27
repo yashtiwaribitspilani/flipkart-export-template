@@ -286,7 +286,8 @@ function main(): void
 {
     // --- Allowed sets for specific columns ---
     $allowedTaxCodes = ['GST_0', 'GST_12', 'GST_18', 'GST_3', 'GST_5', 'GST_APPAREL'];
-    $allowedBrands = [
+    // Added allowedColors for "Color" validation.
+    $allowedColors = [
         'Beige', 'Black', 'Blue', 'Brown', 'Clear', 'Gold', 'Green', 'Grey',
         'Khaki', 'Maroon', 'Multicolor', 'Orange', 'Pink', 'Purple', 'Red',
         'Silver', 'Tan', 'White', 'Yellow'
@@ -361,9 +362,10 @@ function main(): void
         $templateHeaderMap[$headerValue] = Coordinate::stringFromColumnIndex($index + 1);
     }
 
-    // --- Step 3: Define the mapping ---
+    // --- Step 3: Define the baseToFlipkartMapping ---
     // Mapping: target header name => [is_required, source CSV header title]
-    $mapping = [
+    // "HSN" has been added on both sides.
+    $baseToFlipkartMapping = [
         'Seller SKU ID'                => [$isRequired, 'Seller SKU ID'],
         'MRP (INR)'                    => [$isRequired, 'MRP (INR)'],
         'Your selling price (INR)'     => [$isRequired, 'Your selling price (INR)'],
@@ -396,7 +398,8 @@ function main(): void
         'Height - Measuring Unit'      => [$isRequired, 'Height - Measuring Unit'],
         'Width'                        => [$isRequired, 'Width'],
         'Width - Measuring Unit'       => [$isRequired, 'Width - Measuring Unit'],
-        'Main Image URL'               => [$isRequired, 'Main Image URL']
+        'Main Image URL'               => [$isRequired, 'Main Image URL'],
+        'HSN'                          => [$isRequired, 'HSN']
     ];
 
     $invalidRows = [];
@@ -408,7 +411,7 @@ function main(): void
         $errorList = [];
         $rowValues = [];
 
-        foreach ($mapping as $targetHeader => $mapDetails) {
+        foreach ($baseToFlipkartMapping as $targetHeader => $mapDetails) {
             list($isRequiredField, $baseFileHeader) = $mapDetails;
             $value = isset($row[$baseFileHeader]) ? $row[$baseFileHeader] : null;
             $rowValues[$baseFileHeader] = $value;
@@ -423,7 +426,13 @@ function main(): void
                 $baseFileHeader === 'National delivery charge (INR)'
             ) {
                 if (!IsPositiveInteger($value)) {
-                    $errorList[] = "Column '$baseFileHeader' must be a positive integer; got '$value'";
+                    $errorList[] = "Column '$baseFileHeader' must be a positive integer; You entered  '$value'";
+                }
+            }
+            // Added validation for Procurement SLA (DAY) to be either 1 or 2.
+            if ($baseFileHeader === 'Procurement SLA (DAY)') {
+                if (!in_array((int)$value, [1, 2], true)) {
+                    $errorList[] = "Column 'Procurement SLA (DAY)' must be either 1 or 2; You entered  '$value'";
                 }
             }
 
@@ -432,14 +441,14 @@ function main(): void
                 if (strtolower($trimmedVal) === strtolower(FULLFILMENT_BY_VALUE)) {
                     $value = FULLFILMENT_BY_VALUE;
                 } else {
-                    $errorList[] = "Column 'Fullfilment by' must be '" . FULLFILMENT_BY_VALUE . "'; got '$value'";
+                    $errorList[] = "Column 'Fullfilment by' must be '" . FULLFILMENT_BY_VALUE . "'; You entered  '$value'";
                 }
             }
 
             if ($baseFileHeader === 'Shipping provider') {
                 $trimmedVal = trim((string)$value);
                 if ($trimmedVal !== SHIPPING_PROVIDER_VALUE) {
-                    $errorList[] = "Column 'Shipping provider' must be '" . SHIPPING_PROVIDER_VALUE . "'; got '$value'";
+                    $errorList[] = "Column 'Shipping provider' must be '" . SHIPPING_PROVIDER_VALUE . "'; You entered  '$value'";
                 }
             }
 
@@ -448,14 +457,14 @@ function main(): void
                 $baseFileHeader === 'Length (CM)' || $baseFileHeader === 'Height' || $baseFileHeader === 'Width'
             ) {
                 if (!is_numeric($value)) {
-                    $errorList[] = "Column '$baseFileHeader' must be a number (int or decimal); got '$value'";
+                    $errorList[] = "Column '$baseFileHeader' must be a number (int or decimal); You entered  '$value'";
                 }
             }
 
             if ($baseFileHeader === 'Country Of Origin') {
                 $normalized = normalizeCountry($value);
                 if ($normalized === false) {
-                    $errorList[] = "Column 'Country Of Origin' must be a valid country name; got '$value'";
+                    $errorList[] = "Column 'Country Of Origin' must be a valid country name; You entered  '$value'";
                 } else {
                     $value = $normalized;
                 }
@@ -463,13 +472,32 @@ function main(): void
 
             if ($baseFileHeader === 'Tax Code') {
                 if (!in_array(trim((string)$value), $allowedTaxCodes, true)) {
-                    $errorList[] = "Column 'Tax Code' must be one of " . json_encode($allowedTaxCodes) . "; got '$value'";
+                    $errorList[] = "Column 'Tax Code' must be one of " . json_encode($allowedTaxCodes) . "; You entered  '$value'";
                 }
             }
 
-            if ($baseFileHeader === 'Brand') {
-                if (!in_array(trim((string)$value), $allowedBrands, true)) {
-                    $errorList[] = "Column 'Brand' must be one of " . json_encode($allowedBrands) . "; got '$value'";
+            // No allowed values check for Brand; only required check is performed.
+
+            // Added validation for Color using allowedColors.
+            if ($baseFileHeader === 'Color') {
+                $trimmedVal = trim((string)$value);
+                $found = false;
+                foreach ($allowedColors as $allowedColor) {
+                    if (strcasecmp($trimmedVal, $allowedColor) === 0) {
+                        $value = $allowedColor; // Use the canonical value
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    $errorList[] = "Column 'Color' must be one of " . json_encode($allowedColors) . "; You entered  '$value'";
+                }
+            }
+
+            if ($baseFileHeader === 'Packer Details') {
+                // Added validation for Packer Details length to be more than 10 characters.
+                if (strlen(trim((string)$value)) <= 10) {
+                    $errorList[] = "Column 'Packer Details' length must be more than 10 characters; You entered  '$value'";
                 }
             }
 
@@ -481,41 +509,37 @@ function main(): void
                 // Additional validation if needed.
             }
 
-            if ($baseFileHeader === 'Color') {
-                // Additional validation if needed.
-            }
-
             if ($baseFileHeader === 'Style Code') {
                 // Additional validation if needed.
             }
 
             if ($baseFileHeader === 'Type') {
                 if (!in_array(trim((string)$value), $allowedTypes, true)) {
-                    $errorList[] = "Column 'Type' must be one of " . json_encode($allowedTypes) . "; got '$value'";
+                    $errorList[] = "Column 'Type' must be one of " . json_encode($allowedTypes) . "; You entered  '$value'";
                 }
             }
 
             if ($baseFileHeader === 'Ideal For') {
                 if (!in_array(trim((string)$value), $allowedIdealFor, true)) {
-                    $errorList[] = "Column 'Ideal For' must be one of " . json_encode($allowedIdealFor) . "; got '$value'";
+                    $errorList[] = "Column 'Ideal For' must be one of " . json_encode($allowedIdealFor) . "; You entered  '$value'";
                 }
             }
 
             if ($baseFileHeader === 'Occasion') {
                 if (!in_array(trim((string)$value), $allowedOccasions, true)) {
-                    $errorList[] = "Column 'Occasion' must be one of " . json_encode($allowedOccasions) . "; got '$value'";
+                    $errorList[] = "Column 'Occasion' must be one of " . json_encode($allowedOccasions) . "; You entered  '$value'";
                 }
             }
 
             if ($baseFileHeader === 'Material') {
                 if (!in_array(trim((string)$value), $allowedMaterials, true)) {
-                    $errorList[] = "Column 'Material' must be one of " . json_encode($allowedMaterials) . "; got '$value'";
+                    $errorList[] = "Column 'Material' must be one of " . json_encode($allowedMaterials) . "; You entered  '$value'";
                 }
             }
 
             if ($baseFileHeader === 'Main Image URL') {
                 if (!IsValidUrl($value)) {
-                    $errorList[] = "Column 'Main Image URL' must be a valid URL; got '$value'";
+                    $errorList[] = "Column 'Main Image URL' must be a valid URL; You entered  '$value'";
                 }
             }
             // Save the updated value back.
@@ -530,7 +554,7 @@ function main(): void
         }
 
         if (empty($errorList)) {
-            foreach ($mapping as $targetHeader => $mapDetails) {
+            foreach ($baseToFlipkartMapping as $targetHeader => $mapDetails) {
                 list(, $baseFileHeader) = $mapDetails;
                 $value = isset($row[$baseFileHeader]) ? $row[$baseFileHeader] : null;
                 // Since template headers match the CSV headers, look up the target column letter.
