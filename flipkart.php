@@ -220,6 +220,17 @@ const FULLFILMENT_BY_VALUE = 'Seller';
 const SHIPPING_PROVIDER_VALUE = 'Flipkart';
 
 /**
+ * Constant for required flag.
+ */
+const IS_REQUIRED = true;
+const IS_NOT_REQUIRED = false;
+
+/**
+ * Constant for output starting row in Flipkart template.
+ */
+const FLIPKART_OUTPUT_START_ROW = 5;
+
+/**
  * Checks if a given value is a positive integer.
  *
  * @param mixed $value
@@ -305,10 +316,6 @@ function main(): void
         'Silicon', 'Silk', 'Synthetic Leather', 'Tyvek', 'Velvet', 'Wood', 'Wool'
     ];
 
-    // Define variables for required flag.
-    $isRequired = true;
-    $isNotRequired = false;
-
     // --- Step 1: Read the CSV data (using header names) ---
     $baseInputFilePath = 'sample_data.csv'; // Replace with your CSV file path
 
@@ -366,45 +373,44 @@ function main(): void
     // Mapping: target header name => [is_required, source CSV header title]
     // "HSN" has been added on both sides.
     $baseToFlipkartMapping = [
-        'Seller SKU ID'                => [$isRequired, 'Seller SKU ID'],
-        'MRP (INR)'                    => [$isRequired, 'MRP (INR)'],
-        'Your selling price (INR)'     => [$isRequired, 'Your selling price (INR)'],
-        'Fullfilment by'               => [$isRequired, 'Fullfilment by'],
-        'Procurement SLA (DAY)'        => [$isRequired, 'Procurement SLA (DAY)'],
-        'Stock'                        => [$isRequired, 'Stock'],
-        'Shipping provider'            => [$isRequired, 'Shipping provider'],
-        'Local delivery charge (INR)'  => [$isRequired, 'Local delivery charge (INR)'],
-        'Zonal delivery charge (INR)'  => [$isRequired, 'Zonal delivery charge (INR)'],
-        'National delivery charge (INR)' => [$isRequired, 'National delivery charge (INR)'],
-        'Height (CM)'                  => [$isRequired, 'Height (CM)'],
-        'Weight (KG)'                  => [$isRequired, 'Weight (KG)'],
-        'Breadth (CM)'                 => [$isRequired, 'Breadth (CM)'],
-        'Length (CM)'                  => [$isRequired, 'Length (CM)'],
-        'Country Of Origin'            => [$isRequired, 'Country Of Origin'],
-        'Manufacturer Details'         => [$isRequired, 'Manufacturer Details'],
-        'Packer Details'               => [$isRequired, 'Packer Details'],
-        'Tax Code'                     => [$isRequired, 'Tax Code'],
-        'Brand'                        => [$isRequired, 'Brand'],
-        'Model Name'                   => [$isRequired, 'Model Name'],
-        'Brand Color'                  => [$isRequired, 'Brand Color'],
-        'Color'                        => [$isRequired, 'Color'],
-        'Style Code'                   => [$isRequired, 'Style Code'],
-        'Type'                         => [$isRequired, 'Type'],
-        'Ideal For'                    => [$isRequired, 'Ideal For'],
-        'Occasion'                     => [$isRequired, 'Occasion'],
-        'Material'                     => [$isRequired, 'Material'],
-        'Pack of'                      => [$isRequired, 'Pack of'],
-        'Height'                       => [$isRequired, 'Height'],
-        'Height - Measuring Unit'      => [$isRequired, 'Height - Measuring Unit'],
-        'Width'                        => [$isRequired, 'Width'],
-        'Width - Measuring Unit'       => [$isRequired, 'Width - Measuring Unit'],
-        'Main Image URL'               => [$isRequired, 'Main Image URL'],
-        'HSN'                          => [$isRequired, 'HSN']
+        'Seller SKU ID'                => [IS_REQUIRED, 'Seller SKU ID'],
+        'MRP (INR)'                    => [IS_REQUIRED, 'MRP (INR)'],
+        'Your selling price (INR)'     => [IS_REQUIRED, 'Your selling price (INR)'],
+        'Fullfilment by'               => [IS_REQUIRED, 'Fullfilment by'],
+        'Procurement SLA (DAY)'        => [IS_REQUIRED, 'Procurement SLA (DAY)'],
+        'Stock'                        => [IS_REQUIRED, 'Stock'],
+        'Shipping provider'            => [IS_REQUIRED, 'Shipping provider'],
+        'Local delivery charge (INR)'  => [IS_REQUIRED, 'Local delivery charge (INR)'],
+        'Zonal delivery charge (INR)'  => [IS_REQUIRED, 'Zonal delivery charge (INR)'],
+        'National delivery charge (INR)' => [IS_REQUIRED, 'National delivery charge (INR)'],
+        'Height (CM)'                  => [IS_REQUIRED, 'Height (CM)'],
+        'Weight (KG)'                  => [IS_REQUIRED, 'Weight (KG)'],
+        'Breadth (CM)'                 => [IS_REQUIRED, 'Breadth (CM)'],
+        'Length (CM)'                  => [IS_REQUIRED, 'Length (CM)'],
+        'Country Of Origin'            => [IS_REQUIRED, 'Country Of Origin'],
+        'Manufacturer Details'         => [IS_REQUIRED, 'Manufacturer Details'],
+        'Packer Details'               => [IS_REQUIRED, 'Packer Details'],
+        'Tax Code'                     => [IS_REQUIRED, 'Tax Code'],
+        'Brand'                        => [IS_REQUIRED, 'Brand'],
+        'Model Name'                   => [IS_REQUIRED, 'Model Name'],
+        'Brand Color'                  => [IS_REQUIRED, 'Brand Color'],
+        'Color'                        => [IS_REQUIRED, 'Color'],
+        'Style Code'                   => [IS_REQUIRED, 'Style Code'],
+        'Type'                         => [IS_REQUIRED, 'Type'],
+        'Ideal For'                    => [IS_REQUIRED, 'Ideal For'],
+        'Occasion'                     => [IS_REQUIRED, 'Occasion'],
+        'Material'                     => [IS_REQUIRED, 'Material'],
+        'Pack of'                      => [IS_REQUIRED, 'Pack of'],
+        'Height'                       => [IS_REQUIRED, 'Height'],
+        'Height - Measuring Unit'      => [IS_REQUIRED, 'Height - Measuring Unit'],
+        'Width'                        => [IS_REQUIRED, 'Width'],
+        'Width - Measuring Unit'       => [IS_REQUIRED, 'Width - Measuring Unit'],
+        'Main Image URL'               => [IS_REQUIRED, 'Main Image URL'],
+        'HSN'                          => [IS_REQUIRED, 'HSN']
     ];
 
     $invalidRows = [];
-    $flipkartOutputStartRow = 5;
-    $validRowCounter = $flipkartOutputStartRow;
+    $validRowCounter = FLIPKART_OUTPUT_START_ROW;
 
     // --- Step 4: Process each CSV row ---
     foreach ($inputData as $row) {
@@ -581,7 +587,7 @@ function main(): void
     try {
         $writer = IOFactory::createWriter($flipkartTemplateSpreadsheet, 'Xlsx');
         $writer->save($flipkartOutputPath);
-        echo "✅ Valid rows have been filled into the template starting from row $flipkartOutputStartRow in the sling_bag tab.\n";
+        echo "✅ Valid rows have been filled into the template starting from row " . FLIPKART_OUTPUT_START_ROW . " in the sling_bag tab.\n";
     } catch (Exception $e) {
         error_log("Error saving filled workbook: " . $e->getMessage());
         echo "Error: Unable to save filled workbook.\n";
