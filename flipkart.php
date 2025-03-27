@@ -342,7 +342,7 @@ function main(): void
     }
 
     // --- Step 2: Open the Flipkart template ---
-    $flipkartTemplatePath = 'C_sling-bag_fd927b15e6244645_1703-2438FK_REQH2ILIQXHAH.xlsx';
+    $flipkartTemplatePath = 'C_sling-bag_fd927b15e6244645_2703-1612FK_REQ66XXINLQNQ.xlsx';
 
     try {
         $flipkartTemplateSpreadsheet = IOFactory::load($flipkartTemplatePath);
@@ -587,7 +587,7 @@ function main(): void
                 $rowIndex++;
             }
 
-            $invalidReportPath = 'invalid_data_report.xlsx';
+            $invalidReportPath = 'fail-C_sling-bag_fd927b15e6244645_2703-1612FK_REQ66XXINLQNQ ' . date('Y-m-d_H-i-s') . '.xlsx';
             $invalidWriter = IOFactory::createWriter($invalidSpreadsheet, 'Xlsx');
             $invalidWriter->save($invalidReportPath);
             echo "⚠️ Invalid data report generated: " . $invalidReportPath . "\n";
