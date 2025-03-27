@@ -213,7 +213,6 @@ const COUNTRIES = [
  * Checks if a given value is a positive integer.
  *
  * @param mixed $value
- *
  * @return bool
  */
 function IsPositiveInteger($value): bool
@@ -226,34 +225,9 @@ function IsPositiveInteger($value): bool
 }
 
 /**
- * Checks if a given value is numeric.
- *
- * @param mixed $value
- *
- * @return bool
- */
-function IsNumber($value): bool
-{
-    return is_numeric($value);
-}
-
-/**
- * Checks if a value is a valid number (integer or decimal).
- *
- * @param mixed $value
- *
- * @return bool
- */
-function IsValidDecimalOrInt($value): bool
-{
-    return IsNumber($value);
-}
-
-/**
  * Checks if a value is one of the allowed length units.
  *
  * @param mixed $value
- *
  * @return bool
  */
 function IsValidLengthUnit($value): bool
@@ -263,23 +237,27 @@ function IsValidLengthUnit($value): bool
 }
 
 /**
- * Checks if a given country name exists in the predefined list.
+ * Normalizes the given country value.
+ * Performs a case-insensitive match against COUNTRIES and returns the standardized version.
  *
  * @param mixed $value
- *
- * @return bool
+ * @return bool|string Returns the normalized country name if found, otherwise false.
  */
-function IsValidCountry($value): bool
+function normalizeCountry($value)
 {
-    $country = trim((string)$value);
-    return in_array($country, COUNTRIES, true);
+    $input = strtolower(trim((string)$value));
+    foreach (COUNTRIES as $country) {
+        if (strtolower($country) === $input) {
+            return $country;
+        }
+    }
+    return false;
 }
 
 /**
  * Checks if a value is a valid URL.
  *
  * @param mixed $value
- *
  * @return bool
  */
 function IsValidUrl($value): bool
@@ -290,7 +268,6 @@ function IsValidUrl($value): bool
 
 /**
  * Main execution function.
- *
  * Contains all execution logic.
  *
  * @return void
@@ -318,25 +295,44 @@ function main(): void
     ];
 
     // Define variables for required flag.
-    $isRequired    = true;
+    $isRequired = true;
     $isNotRequired = false;
 
-    // --- Step 1: Read the XLSX data (ignoring header names) ---
-    $xlsx_file_path = 'sample_data (1).xlsx'; // Replace with your XLSX file path
+    // --- Step 1: Read the CSV data (using header names) ---
+    $csv_file_path = 'sample_data.csv'; // Replace with your CSV file path
 
     try {
-        $reader      = IOFactory::createReader('Xlsx');
+        $reader = IOFactory::createReader('Csv');
+        // Optionally adjust CSV settings (delimiter, enclosure, etc.)
         $reader->setReadDataOnly(true);
-        $spreadsheet = $reader->load($xlsx_file_path);
+        $spreadsheet = $reader->load($csv_file_path);
     } catch (Exception $e) {
-        error_log("Error loading XLSX file: " . $e->getMessage());
-        echo "Error: Unable to load XLSX file.\n";
+        error_log("Error loading CSV file: " . $e->getMessage());
+        echo "Error: Unable to load CSV file.\n";
         return;
     }
 
     $worksheet = $spreadsheet->getActiveSheet();
-    // PhpSpreadsheet reads data into an array with keys as column letters (A, B, C, …)
-    $data = $worksheet->toArray(null, true, true, true);
+    $rows = $worksheet->toArray(null, true, true, true);
+
+    // Assume the first row contains headers.
+    $headers = array_map('trim', array_values(reset($rows)));
+    // Remove the header row from data.
+    array_shift($rows);
+
+    // Convert each row to an associative array using header names.
+    $data = [];
+    foreach ($rows as $row) {
+        $assoc = [];
+        $colIndex = 0;
+        foreach ($headers as $header) {
+            // Use column letters from PhpSpreadsheet for any fallback if needed.
+            $letter = Coordinate::stringFromColumnIndex($colIndex + 1);
+            $assoc[$header] = isset($row[$letter]) ? $row[$letter] : null;
+            $colIndex++;
+        }
+        $data[] = $assoc;
+    }
 
     // --- Step 2: Open the Excel template ---
     $template_path = 'C_sling-bag_fd927b15e6244645_1703-2438FK_REQH2ILIQXHAH.xlsx';
@@ -352,222 +348,197 @@ function main(): void
     $sheet = $templateSpreadsheet->getSheetByName('sling_bag');
 
     // --- Step 3: Define the mapping ---
-    // Mapping: target template column letter => [is_required, source Excel column letter]
+    // Mapping: target template column letter => [is_required, source CSV header title]
     $mapping = [
-        'G'  => [$isRequired, 'G'],
-        'J'  => [$isRequired, 'J'],  // Must be positive integer
-        'K'  => [$isRequired, 'K'],  // Must be positive integer
-        'L'  => [$isRequired, 'L'],  // Must be exactly "Seller"
-        'N'  => [$isRequired, 'N'],  // Must be positive integer
-        'O'  => [$isRequired, 'O'],  // Must be positive integer
-        'P'  => [$isRequired, 'P'],  // Must be exactly "Flipkart"
-        'Q'  => [$isRequired, 'Q'],  // Must be positive integer
-        'R'  => [$isRequired, 'R'],  // Must be positive integer
-        'S'  => [$isRequired, 'S'],  // Must be positive integer
-        'T'  => [$isRequired, 'T'],  // Can be int or decimal
-        'U'  => [$isRequired, 'U'],  // Can be int or decimal
-        'V'  => [$isRequired, 'V'],  // Can be int or decimal
-        'W'  => [$isRequired, 'W'],  // Can be int or decimal
-        'Z'  => [$isRequired, 'Z'],  // Valid country (must be in the list)
-        'AA' => [$isRequired, 'AA'],
-        'AB' => [$isRequired, 'AB'],
-        'AD' => [$isRequired, 'AD'], // Only allowed GST values
-        'AF' => [$isRequired, 'AF'],
-        'AG' => [$isRequired, 'AG'], // AF and AG must not be the same
-        'AH' => [$isRequired, 'AH'],
-        'AI' => [$isRequired, 'AI'], // Must be one of allowed_AI
-        'AJ' => [$isRequired, 'AJ'],
-        'AK' => [$isRequired, 'AK'], // Must be one of allowed_AK
-        'AL' => [$isRequired, 'AL'], // Must be one of allowed_AL
-        'AM' => [$isRequired, 'AM'], // Must be one of allowed_AM
-        'AN' => [$isRequired, 'AN'], // Must be one of allowed_AN
-        'AO' => [$isRequired, 'AO'], // Must be a number
-        'AP' => [$isRequired, 'AP'], // Can be int or decimal
-        'AQ' => [$isRequired, 'AQ'], // Must be one of allowed units ("cm", "mm", "inch")
-        'AR' => [$isRequired, 'AR'], // Can be int or decimal
-        'AS' => [$isRequired, 'AS'], // Must be one of allowed units ("cm", "mm", "inch")
-        'AT' => [$isRequired, 'AT']  // Must be a valid URL
+        'G'  => [$isRequired, 'Seller SKU ID'],
+        'J'  => [$isRequired, 'MRP (INR)'],
+        'K'  => [$isRequired, 'Your selling price (INR)'],
+        'L'  => [$isRequired, 'Fullfilment by'],
+        'N'  => [$isRequired, 'Procurement SLA (DAY)'],
+        'O'  => [$isRequired, 'Stock'],
+        'P'  => [$isRequired, 'Shipping provider'],
+        'Q'  => [$isRequired, 'Local delivery charge (INR)'],
+        'R'  => [$isRequired, 'Zonal delivery charge (INR)'],
+        'S'  => [$isRequired, 'National delivery charge (INR)'],
+        'T'  => [$isRequired, 'Height (CM)'],
+        'U'  => [$isRequired, 'Weight (KG)'],
+        'V'  => [$isRequired, 'Breadth (CM)'],
+        'W'  => [$isRequired, 'Length (CM)'],
+        'Z'  => [$isRequired, 'Country Of Origin'],
+        'AA' => [$isRequired, 'Manufacturer Details'],
+        'AB' => [$isRequired, 'Packer Details'],
+        'AD' => [$isRequired, 'Tax Code'],
+        'AF' => [$isRequired, 'Brand'],
+        'AG' => [$isRequired, 'Model Name'],
+        'AH' => [$isRequired, 'Brand Color'],
+        'AI' => [$isRequired, 'Color'],
+        'AJ' => [$isRequired, 'Style Code'],
+        'AK' => [$isRequired, 'Type'],
+        'AL' => [$isRequired, 'Ideal For'],
+        'AM' => [$isRequired, 'Occasion'],
+        'AN' => [$isRequired, 'Material'],
+        'AO' => [$isRequired, 'Pack of'],
+        'AP' => [$isRequired, 'Height'],
+        'AQ' => [$isRequired, 'Height - Measuring Unit'],
+        'AR' => [$isRequired, 'Width'],
+        'AS' => [$isRequired, 'Width - Measuring Unit'],
+        'AT' => [$isRequired, 'Main Image URL']
     ];
 
-    // --- Step 4: Prepare for invalid data tracking and valid row counter ---
-    $invalid_data_rows = []; // Rows that fail validation
-    $start_row         = 5;  // Row in the template where data will be written
-    $valid_row_counter = $start_row; // Counter for valid rows in the template
+    $invalid_data_rows = [];
+    $start_row = 5;
+    $valid_row_counter = $start_row;
 
-    // --- Step 5: Process each row from the input file ---
-    // $data is an array of rows. Each row is an associative array with keys as column letters.
+    // --- Step 4: Process each row from the CSV ---
     foreach ($data as $row) {
         $error_list = [];
         $row_values = [];
 
-        // Validate each mapped field.
         foreach ($mapping as $target_col => $mapDetails) {
-            list($is_required, $source_letter) = $mapDetails;
-            $value                      = isset($row[$source_letter]) ? $row[$source_letter] : null;
-            $row_values[$source_letter] = $value;
+            list($is_required, $header) = $mapDetails;
+            $value = isset($row[$header]) ? $row[$header] : null;
+            $row_values[$header] = $value;
 
             // Check required fields.
             if ($is_required && (is_null($value) || trim((string)$value) === '' || strtolower((string)$value) === 'nan')) {
-                $error_list[] = "Missing required value in column $source_letter";
+                $error_list[] = "Missing required value in column '$header'";
             }
 
             // Column-specific validations.
-            if ($source_letter === 'J') {
+            if (
+                $header === 'MRP (INR)' || $header === 'Your selling price (INR)' || $header === 'Procurement SLA (DAY)' ||
+                $header === 'Stock' || $header === 'Local delivery charge (INR)' || $header === 'Zonal delivery charge (INR)' ||
+                $header === 'National delivery charge (INR)'
+            ) {
                 if (!IsPositiveInteger($value)) {
-                    $error_list[] = "Column J must be a positive integer; got '$value'";
+                    $error_list[] = "Column '$header' must be a positive integer; got '$value'";
                 }
             }
 
-            if ($source_letter === 'K') {
-                if (!IsPositiveInteger($value)) {
-                    $error_list[] = "Column K must be a positive integer; got '$value'";
-                }
-            }
-
-            if ($source_letter === 'L') {
+            if ($header === 'Fullfilment by') {
                 $trimmedValue = trim((string)$value);
                 // If value is "seller" in lowercase, convert it to "Seller"
                 if ($trimmedValue === 'seller') {
                     $value = 'Seller';
                 } elseif ($trimmedValue !== 'Seller') {
-                    $error_list[] = "Column L must be 'Seller'; got '$value'";
+                    $error_list[] = "Column 'Fullfilment by' must be 'Seller'; got '$value'";
                 }
             }
 
-            if ($source_letter === 'N') {
-                if (!IsPositiveInteger($value)) {
-                    $error_list[] = "Column N must be a positive integer; got '$value'";
+            if ($header === 'Flipkart') {
+                // Not applicable here; see below.
+            }
+
+            if (
+                $header === 'Height (CM)' || $header === 'Weight (KG)' || $header === 'Breadth (CM)' ||
+                $header === 'Length (CM)' || $header === 'Height' || $header === 'Width'
+            ) {
+                if (!is_numeric($value)) {
+                    $error_list[] = "Column '$header' must be a number (int or decimal); got '$value'";
                 }
             }
 
-            if ($source_letter === 'O') {
-                if (!IsPositiveInteger($value)) {
-                    $error_list[] = "Column O must be a positive integer; got '$value'";
+            if ($header === 'Country Of Origin') {
+                $normalized = normalizeCountry($value);
+                if ($normalized === false) {
+                    $error_list[] = "Column 'Country Of Origin' must be a valid country name; got '$value'";
+                } else {
+                    $value = $normalized;
                 }
             }
 
-            if ($source_letter === 'P') {
-                if (trim((string)$value) !== 'Flipkart') {
-                    $error_list[] = "Column P must be 'Flipkart'; got '$value'";
-                }
-            }
-
-            if (in_array($source_letter, ['Q', 'R', 'S'], true)) {
-                if (!IsPositiveInteger($value)) {
-                    $error_list[] = "Column $source_letter must be a positive integer; got '$value'";
-                }
-            }
-
-            if (in_array($source_letter, ['T', 'U', 'V', 'W'], true)) {
-                if (!IsValidDecimalOrInt($value)) {
-                    $error_list[] = "Column $source_letter must be a number (int or decimal); got '$value'";
-                }
-            }
-
-            if ($source_letter === 'Z') {
-                if (!IsValidCountry($value)) {
-                    $error_list[] = "Column Z must be a valid country name (must be in the predefined list); got '$value'";
-                }
-            }
-
-            if ($source_letter === 'AD') {
+            if ($header === 'Tax Code') {
                 if (!in_array(trim((string)$value), $allowed_AD, true)) {
-                    $error_list[] = "Column AD must be one of " . json_encode($allowed_AD) .
-                        "; got '$value'";
+                    $error_list[] = "Column 'Tax Code' must be one of " . json_encode($allowed_AD) . "; got '$value'";
                 }
             }
 
-            if ($source_letter === 'AI') {
+            if ($header === 'Brand') {
                 if (!in_array(trim((string)$value), $allowed_AI, true)) {
-                    $error_list[] = "Column AI must be one of " . json_encode($allowed_AI) .
-                        "; got '$value'";
+                    $error_list[] = "Column 'Brand' must be one of " . json_encode($allowed_AI) . "; got '$value'";
                 }
             }
 
-            if ($source_letter === 'AK') {
+            if ($header === 'Model Name') {
+                // Additional validation can be added here if needed.
+            }
+
+            if ($header === 'Brand Color') {
+                // Additional validation if needed.
+            }
+
+            if ($header === 'Color') {
+                // Additional validation if needed.
+            }
+
+            if ($header === 'Style Code') {
+                // Additional validation if needed.
+            }
+
+            if ($header === 'Type') {
                 if (!in_array(trim((string)$value), $allowed_AK, true)) {
-                    $error_list[] = "Column AK must be one of " . json_encode($allowed_AK) .
-                        "; got '$value'";
+                    $error_list[] = "Column 'Type' must be one of " . json_encode($allowed_AK) . "; got '$value'";
                 }
             }
 
-            if ($source_letter === 'AL') {
+            if ($header === 'Ideal For') {
                 if (!in_array(trim((string)$value), $allowed_AL, true)) {
-                    $error_list[] = "Column AL must be one of " . json_encode($allowed_AL) .
-                        "; got '$value'";
+                    $error_list[] = "Column 'Ideal For' must be one of " . json_encode($allowed_AL) . "; got '$value'";
                 }
             }
 
-            if ($source_letter === 'AM') {
+            if ($header === 'Occasion') {
                 if (!in_array(trim((string)$value), $allowed_AM, true)) {
-                    $error_list[] = "Column AM must be one of " . json_encode($allowed_AM) .
-                        "; got '$value'";
+                    $error_list[] = "Column 'Occasion' must be one of " . json_encode($allowed_AM) . "; got '$value'";
                 }
             }
 
-            if ($source_letter === 'AN') {
+            if ($header === 'Material') {
                 if (!in_array(trim((string)$value), $allowed_AN, true)) {
-                    $error_list[] = "Column AN must be one of " . json_encode($allowed_AN) .
-                        "; got '$value'";
+                    $error_list[] = "Column 'Material' must be one of " . json_encode($allowed_AN) . "; got '$value'";
                 }
             }
 
-            if ($source_letter === 'AO') {
-                if (!IsNumber($value)) {
-                    $error_list[] = "Column AO must be a number; got '$value'";
-                }
-            }
+            // For columns like "Shipping provider", "Manufacturer Details", etc.,
+            // you can add additional validation as needed.
 
-            if (in_array($source_letter, ['AP', 'AR'], true)) {
-                if (!IsValidDecimalOrInt($value)) {
-                    $error_list[] = "Column $source_letter must be a number (int or decimal); got '$value'";
-                }
-            }
-
-            if (in_array($source_letter, ['AQ', 'AS'], true)) {
-                if (!IsValidLengthUnit($value)) {
-                    $error_list[] = "Column $source_letter must be one of 'cm', 'mm', 'inch'; got '$value'";
-                }
-            }
-
-            if ($source_letter === 'AT') {
+            // For "Main Image URL"
+            if ($header === 'Main Image URL') {
                 if (!IsValidUrl($value)) {
-                    $error_list[] = "Column AT must be a valid URL; got '$value'";
+                    $error_list[] = "Column 'Main Image URL' must be a valid URL; got '$value'";
                 }
             }
+            // Save the possibly updated value back to the row's associative array.
+            $row[$header] = $value;
         }
 
-        // Cross-field validation: AF and AG must not have the same value.
-        $af_val = isset($row_values['AF']) ? $row_values['AF'] : null;
-        $ag_val = isset($row_values['AG']) ? $row_values['AG'] : null;
-        if (!is_null($af_val) && !is_null($ag_val)) {
-            if (trim((string)$af_val) === trim((string)$ag_val)) {
-                $error_list[] = 'Columns AF and AG cannot have the same value';
-            }
+        // Cross-field validation for columns "Brand" (AF) and "Model Name" (AG), for example.
+        // Adjust if needed (currently not specified in mapping).
+        // For example:
+        $brand = isset($row['Brand']) ? $row['Brand'] : null;
+        $model = isset($row['Model Name']) ? $row['Model Name'] : null;
+        if (!is_null($brand) && !is_null($model) && trim((string)$brand) === trim((string)$model)) {
+            $error_list[] = "Columns 'Brand' and 'Model Name' cannot have the same value";
         }
 
-        // If row is valid, write it to the template; otherwise, add it to invalid data report.
         if (empty($error_list)) {
-            // Write each mapped field into the template in the row indicated by $valid_row_counter.
             foreach ($mapping as $target_col => $mapDetails) {
-                list(, $source_letter) = $mapDetails;
-                $value          = isset($row[$source_letter]) ? $row[$source_letter] : null;
+                list(, $header) = $mapDetails;
+                $value = isset($row[$header]) ? $row[$header] : null;
                 $cellCoordinate = $target_col . $valid_row_counter;
                 $sheet->setCellValue($cellCoordinate, $value);
             }
             $valid_row_counter++;
         } else {
-            // Create an array for the row using Excel letters for columns.
             $row_dict = [];
-            foreach ($row as $colLetter => $cellValue) {
-                $row_dict[$colLetter] = $cellValue;
+            foreach ($row as $header => $cellValue) {
+                $row_dict[$header] = $cellValue;
             }
             $row_dict['Validation Errors'] = implode(', ', $error_list);
             $invalid_data_rows[] = $row_dict;
         }
     }
 
-    // --- Step 6: Save the updated workbook with only valid rows ---
     $output_path = 'C_sling-bag_filled.xlsx';
     try {
         $writer = IOFactory::createWriter($templateSpreadsheet, 'Xlsx');
@@ -578,15 +549,12 @@ function main(): void
         echo "Error: Unable to save filled workbook.\n";
     }
 
-    // --- Step 7: Create a report for invalid rows (if any) ---
     if (!empty($invalid_data_rows)) {
         try {
-            // Create a new spreadsheet for the invalid report.
             $invalidSpreadsheet = new Spreadsheet();
-            $invalidSheet       = $invalidSpreadsheet->getActiveSheet();
+            $invalidSheet = $invalidSpreadsheet->getActiveSheet();
 
-            // Write header row.
-            $headers  = array_keys($invalid_data_rows[0]);
+            $headers = array_keys($invalid_data_rows[0]);
             $colIndex = 1;
             foreach ($headers as $header) {
                 $cellCoordinate = Coordinate::stringFromColumnIndex($colIndex) . '1';
@@ -606,11 +574,10 @@ function main(): void
             }
 
             $invalid_report_path = 'invalid_data_report.xlsx';
-            $invalidWriter      = IOFactory::createWriter($invalidSpreadsheet, 'Xlsx');
+            $invalidWriter = IOFactory::createWriter($invalidSpreadsheet, 'Xlsx');
             $invalidWriter->save($invalid_report_path);
             echo "⚠️ Invalid data report generated: " . $invalid_report_path . "\n";
 
-            // Free memory for invalid report.
             $invalidSpreadsheet->disconnectWorksheets();
             unset($invalidSpreadsheet);
         } catch (Exception $e) {
@@ -621,7 +588,6 @@ function main(): void
         echo "✅ All rows passed validation. No invalid data report generated.\n";
     }
 
-    // Free memory for main spreadsheets.
     $spreadsheet->disconnectWorksheets();
     unset($spreadsheet);
 
@@ -629,7 +595,6 @@ function main(): void
     unset($templateSpreadsheet);
 }
 
-// Only call main() if this file is executed directly.
 if (__FILE__ === realpath($_SERVER['SCRIPT_FILENAME'])) {
     main();
 }
