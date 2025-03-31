@@ -1,0 +1,2 @@
+Value for G,,,5,10,Seller,,3,4,Flipkart,1,2,3,1.5,2.5,3,4,,,India,AA_value,AB_value,,GST_12,,BrandX,ModelX,AH_value,Red,AJ_value,Sling Bag,Women,Casual,Cotton,123,10.5,cm,20.5,cm,https://example.com/image.jpg
+Another G,,,-3,abc,Buyer,,0,-1,flipkart,two,0,3,not_a_number,2.5,3,4,,,india,AA_invalid,AB_invalid,,GST_99,,SameValue,SameValue,AH_invalid,Orange,AJ_invalid,Tote,Kids,Evening/Party,Leather,NaN,10.5,mm,20,inch,not_a_url
